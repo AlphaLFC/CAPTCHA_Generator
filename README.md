@@ -1,2 +1,4 @@
 # codeGenerator
-make training data for a codeGenerator using DL frameworks (object-char detection)
+Make training data for a codeIdentifier using DL frameworks (an object-char detection job).
+
+- Under constructing...
