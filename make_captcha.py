@@ -8,6 +8,7 @@ Created on Tue Sep 27 17:41:55 2016
 from __future__ import division
 import random
 import string
+import threading
 import os
 import fortranformat as ff
 import numpy as np
@@ -165,7 +166,7 @@ def charImg(text='T', mode='RGBA', size=(28, 28),
         fontcolor = randRGBcolor()
     draw.text(textpos, text, font=font, fill=fontcolor)
     if rotate == 'rand':
-        rotate = random.randint(-30, 30)
+        rotate = random.randint(-15, 15)
         global ROTATE
         ROTATE = rotate
         image = image.rotate(rotate, expand=1)
@@ -244,7 +245,7 @@ def codeGenerator(text='TEST', bgsize=(200, 60), charsize='auto',
     text_lst = list(text)
     text_num = len(text)
     if charsize == 'auto':
-        charsize = tuple([int(bgsize[1]*0.9)]*2)
+        charsize = tuple([int(bgsize[1]*1.0)]*2)
     else:
         assert type(charsize) is tuple and len(charsize) == 2, 'watch input!'
     w_out = (bgsize[0] - text_num*charsize[0] - (text_num-1)*w_sep) / 2
@@ -258,7 +259,8 @@ def codeGenerator(text='TEST', bgsize=(200, 60), charsize='auto',
         posw_i = int(w_out + i*(charsize[0]+w_sep))
         posh_i = int((bgsize[1] - charsize[1]) / 2)
         charimg = charImg(size=charsize, text=char, transparent=transparent,
-                          EDGE_ENHANCE=True, SMOOTH=True)
+                          EDGE_ENHANCE=False, SMOOTH=True,
+                          fontcolor=(0, 0, 255), randfontcolor=False)
         # compute char edge
         global ROTATE, POSES, TRANSPARENT
         tmp_transparent = TRANSPARENT
@@ -278,7 +280,10 @@ def codeGenerator(text='TEST', bgsize=(200, 60), charsize='auto',
         label = bbox + [char]
         labels.append(label)
         charimgs.append((charimg, posw_i, posh_i, tmp_transparent))
-    charimgs = sorted(charimgs, key=lambda x: x[3], reverse=True)
+    if transparent == 'auto':
+        charimgs = sorted(charimgs, key=lambda x: x[3], reverse=True)
+    else:
+        charimgs = random.sample(charimgs, len(charimgs))
     for charimg in charimgs:
         bgimg.paste(charimg[0], (charimg[1], charimg[2]), charimg[0])
     if draw_box:
@@ -332,10 +337,16 @@ def make_captcha_data():
     path = './captcha'
     if not os.path.exists(path):
         os.mkdir(path)
-    for i in xrange(100):
+    for i in xrange(5000):
         fname = path + '/' + '%04d' % (i+1)
-        text = rand_text(number=4)
-        codeGenerator(text=text, w_sep=-5, bgsize=(100, 30), fname=fname)
+        text = rand_text(number=6)
+        codeGenerator(text=text, w_sep=-100, bgsize=(500, 150),
+                      line_width=5, fname=fname, transparent=0)
+        if (i+1) % 10 == 0:
+            print '.',
+            if (i+1) % 100 == 0:
+                print ''
+                print '{:4d} captcha images generated.'.format(i+1)
 
 
 if __name__ == '__main__':
